@@ -34,6 +34,10 @@
                       我的空间
                     </router-link>
                   </a-menu-item>
+                  <a-menu-item @click="openEditUserNameModal">
+                    <EditOutlined />
+                    修改用户名
+                  </a-menu-item>
                   <a-menu-item @click="doLogout">
                     <LogoutOutlined />
                     退出登录
@@ -50,16 +54,33 @@
         </div>
       </a-col>
     </a-row>
+    <a-modal
+      v-model:open="editUserNameModalOpen"
+      title="修改用户名"
+      :confirm-loading="editUserNameLoading"
+      @ok="doEditUserName"
+    >
+      <a-form layout="vertical">
+        <a-form-item label="用户名">
+          <a-input
+            v-model:value="editUserName"
+            :maxlength="20"
+            show-count
+            placeholder="请输入新的用户名"
+          />
+        </a-form-item>
+      </a-form>
+    </a-modal>
   </div>
 </template>
 <script lang="ts" setup>
 import { computed, h, ref } from 'vue'
-import { HomeOutlined, LogoutOutlined, UserOutlined } from '@ant-design/icons-vue'
+import { EditOutlined, HomeOutlined, LogoutOutlined, UserOutlined } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import type { MenuProps } from 'ant-design-vue'
 import { useRouter } from 'vue-router'
 import { useLoginUserStore } from '@/stores/useLoginUserStore.ts'
-import { userLogoutUsingPost } from '@/api/userController.ts'
+import { updateUserUsingPost, userLogoutUsingPost } from '@/api/userController.ts'
 
 const loginUserStore = useLoginUserStore()
 
@@ -123,6 +144,48 @@ const doMenuClick = ({ key }: { key: string }) => {
   router.push({
     path: key,
   })
+}
+
+const editUserNameModalOpen = ref(false)
+const editUserNameLoading = ref(false)
+const editUserName = ref('')
+
+const openEditUserNameModal = () => {
+  editUserName.value = loginUserStore.loginUser.userName ?? ''
+  editUserNameModalOpen.value = true
+}
+
+const doEditUserName = async () => {
+  const userName = editUserName.value.trim()
+  if (!userName) {
+    message.error('用户名不能为空')
+    return
+  }
+  if (userName.length > 20) {
+    message.error('用户名不能超过 20 位')
+    return
+  }
+  const id = loginUserStore.loginUser.id
+  if (!id) {
+    message.error('请先登录')
+    return
+  }
+  editUserNameLoading.value = true
+  try {
+    const res = await updateUserUsingPost({
+      id,
+      userName,
+    })
+    if (res.data.code === 0) {
+      await loginUserStore.fetchLoginUser()
+      editUserNameModalOpen.value = false
+      message.success('用户名修改成功')
+      return
+    }
+    message.error('用户名修改失败，' + res.data.message)
+  } finally {
+    editUserNameLoading.value = false
+  }
 }
 
 // 用户注销

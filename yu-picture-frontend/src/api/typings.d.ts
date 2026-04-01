@@ -694,6 +694,7 @@ declare namespace API {
   type UserRegisterRequest = {
     checkPassword?: string
     userAccount?: string
+    userName?: string
     userPassword?: string
   }
 

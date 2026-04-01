@@ -1,8 +1,6 @@
 package com.yupi.yupicturebackend.controller;
 
 import cn.hutool.core.bean.BeanUtil;
-import cn.hutool.core.io.FileUtil;
-import cn.hutool.http.HttpUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.yupi.yupicturebackend.annotation.AuthCheck;
 import com.yupi.yupicturebackend.common.BaseResponse;
@@ -22,7 +20,6 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
-import java.nio.file.Files;
 import java.util.List;
 
 @RestController
@@ -39,9 +36,10 @@ public class UserController {
     public BaseResponse<Long> userRegister(@RequestBody UserRegisterRequest userRegisterRequest) {
         ThrowUtils.throwIf(userRegisterRequest == null, ErrorCode.PARAMS_ERROR);
         String userAccount = userRegisterRequest.getUserAccount();
+        String userName = userRegisterRequest.getUserName();
         String userPassword = userRegisterRequest.getUserPassword();
         String checkPassword = userRegisterRequest.getCheckPassword();
-        long result = userService.userRegister(userAccount, userPassword, checkPassword);
+        long result = userService.userRegister(userAccount, userName, userPassword, checkPassword);
         return ResultUtils.success(result);
     }
 
@@ -134,10 +132,20 @@ public class UserController {
      * 更新用户
      */
     @PostMapping("/update")
-    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
-    public BaseResponse<Boolean> updateUser(@RequestBody UserUpdateRequest userUpdateRequest) {
+    public BaseResponse<Boolean> updateUser(@RequestBody UserUpdateRequest userUpdateRequest,
+                                            HttpServletRequest request) {
         if (userUpdateRequest == null || userUpdateRequest.getId() == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        User loginUser = userService.getLoginUser(request);
+        boolean isAdmin = userService.isAdmin(loginUser);
+        // 非管理员仅允许更新自己的信息
+        if (!isAdmin && !userUpdateRequest.getId().equals(loginUser.getId())) {
+            throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
+        }
+        // 非管理员不允许改角色
+        if (!isAdmin) {
+            userUpdateRequest.setUserRole(null);
         }
         User user = new User();
         BeanUtils.copyProperties(userUpdateRequest, user);

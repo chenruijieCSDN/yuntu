@@ -47,13 +47,17 @@ const fixedMenuItems = [
 
 const teamSpaceList = ref<API.SpaceUserVO[]>([])
 const menuItems = computed(() => {
+  // 过滤掉已删除空间（后端会返回 spaceId，但 space 可能为空）
+  const validTeamSpaceList = teamSpaceList.value.filter((spaceUser) => {
+    return !!(spaceUser.space?.id && spaceUser.space?.spaceName)
+  })
   // 如果用户没有团队空间，则只展示固定菜单
-  if (teamSpaceList.value.length < 1) {
+  if (validTeamSpaceList.length < 1) {
     return fixedMenuItems
   }
   // 如果用户有团队空间，则展示固定菜单和团队空间菜单
   // 展示团队空间分组
-  const teamSpaceSubMenus = teamSpaceList.value.map((spaceUser) => {
+  const teamSpaceSubMenus = validTeamSpaceList.map((spaceUser) => {
     const space = spaceUser.space
     return {
       key: '/space/' + spaceUser.spaceId,
@@ -75,6 +79,7 @@ const fetchTeamSpaceList = async () => {
   if (res.data.code === 0 && res.data.data) {
     teamSpaceList.value = res.data.data
   } else {
+    teamSpaceList.value = []
     message.error('加载我的团队空间失败，' + res.data.message)
   }
 }

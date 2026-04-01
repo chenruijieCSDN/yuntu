@@ -3,6 +3,15 @@
     <h2 class="title">智能协同云图库 - 用户注册</h2>
     <div class="desc">企业级智能协同云图库</div>
     <a-form :model="formState" name="basic" autocomplete="off" @finish="handleSubmit">
+      <a-form-item
+        name="userName"
+        :rules="[
+          { required: true, message: '请输入用户名' },
+          { max: 20, message: '用户名不能超过 20 位' },
+        ]"
+      >
+        <a-input v-model:value="formState.userName" placeholder="请输入用户名" />
+      </a-form-item>
       <a-form-item name="userAccount" :rules="[{ required: true, message: '请输入账号' }]">
         <a-input v-model:value="formState.userAccount" placeholder="请输入账号" />
       </a-form-item>
@@ -43,6 +52,7 @@ import router from '@/router' // 用于接受表单输入的值
 
 // 用于接受表单输入的值
 const formState = reactive<API.UserRegisterRequest>({
+  userName: '',
   userAccount: '',
   userPassword: '',
   checkPassword: '',

@@ -5,7 +5,7 @@
       <span v-if="queryAll">全部空间</span>
       <span v-else-if="queryPublic">公共图库</span>
       <span v-else>
-        <a :href="`/space/${spaceId}`" target="_blank">空间 id：{{ spaceId }}</a>
+        <a :href="`/#/space/${spaceId}`" target="_blank">空间 id：{{ spaceId }}</a>
       </span>
     </h2>
     <div style="margin-bottom: 16px" />

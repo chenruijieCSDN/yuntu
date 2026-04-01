@@ -259,9 +259,12 @@ onUnmounted(() => {
 const enterEdit = () => {
   if (websocket) {
     // 发送进入编辑状态的请求
-    websocket.sendMessage({
+    const ok = websocket.sendMessage({
       type: PICTURE_EDIT_MESSAGE_TYPE_ENUM.ENTER_EDIT,
     })
+    if (!ok) {
+      message.warning('实时连接尚未建立，请稍后重试')
+    }
   }
 }
 

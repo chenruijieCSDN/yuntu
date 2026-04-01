@@ -35,7 +35,6 @@ import com.yupi.yupicturebackend.service.SpaceService;
 import com.yupi.yupicturebackend.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.util.DigestUtils;
@@ -46,7 +45,6 @@ import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -90,13 +88,16 @@ public class PictureController {
      * 上传图片（可重新上传）
      */
     @PostMapping("/upload")
-    @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.PICTURE_UPLOAD)
 //    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<PictureVO> uploadPicture(
             @RequestPart("file") MultipartFile multipartFile,
             PictureUploadRequest pictureUploadRequest,
             HttpServletRequest request) {
+        if (pictureUploadRequest == null) {
+            pictureUploadRequest = new PictureUploadRequest();
+        }
         User loginUser = userService.getLoginUser(request);
+        checkUploadPermission(pictureUploadRequest, loginUser);
         PictureVO pictureVO = pictureService.uploadPicture(multipartFile, pictureUploadRequest, loginUser);
         return ResultUtils.success(pictureVO);
     }
@@ -105,14 +106,43 @@ public class PictureController {
      * 通过 URL 上传图片（可重新上传）
      */
     @PostMapping("/upload/url")
-    @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.PICTURE_UPLOAD)
     public BaseResponse<PictureVO> uploadPictureByUrl(
             @RequestBody PictureUploadRequest pictureUploadRequest,
             HttpServletRequest request) {
+        ThrowUtils.throwIf(pictureUploadRequest == null, ErrorCode.PARAMS_ERROR);
         User loginUser = userService.getLoginUser(request);
+        checkUploadPermission(pictureUploadRequest, loginUser);
         String fileUrl = pictureUploadRequest.getFileUrl();
         PictureVO pictureVO = pictureService.uploadPicture(fileUrl, pictureUploadRequest, loginUser);
         return ResultUtils.success(pictureVO);
+    }
+
+    /**
+     * 上传鉴权：新增图片需要上传权限，编辑后保存需要编辑权限
+     */
+    private void checkUploadPermission(PictureUploadRequest pictureUploadRequest, User loginUser) {
+        Long spaceId = pictureUploadRequest.getSpaceId();
+        Long pictureId = pictureUploadRequest.getId();
+        boolean isEditUpload = pictureId != null;
+        if (isEditUpload) {
+            Picture oldPicture = pictureService.getById(pictureId);
+            ThrowUtils.throwIf(oldPicture == null, ErrorCode.NOT_FOUND_ERROR, "图片不存在");
+            if (spaceId == null) {
+                spaceId = oldPicture.getSpaceId();
+            } else if (!spaceId.equals(oldPicture.getSpaceId())) {
+                throw new BusinessException(ErrorCode.PARAMS_ERROR, "空间 id 不一致");
+            }
+        }
+        Space space = null;
+        if (spaceId != null) {
+            space = spaceService.getById(spaceId);
+            ThrowUtils.throwIf(space == null, ErrorCode.NOT_FOUND_ERROR, "空间不存在");
+        }
+        List<String> permissionList = spaceUserAuthManager.getPermissionList(space, loginUser);
+        String needPermission = isEditUpload
+                ? SpaceUserPermissionConstant.PICTURE_EDIT
+                : SpaceUserPermissionConstant.PICTURE_UPLOAD;
+        ThrowUtils.throwIf(!permissionList.contains(needPermission), ErrorCode.NO_AUTH_ERROR);
     }
 
     @PostMapping("/delete")

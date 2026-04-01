@@ -13,10 +13,10 @@ export default class PictureEditWebSocket {
    * 初始化 WebSocket 连接
    */
   connect() {
-    const DEV_BASE_URL = "ws://localhost:8123";
-    // 线上地址
-    // const PROD_BASE_URL = "ws://81.69.229.63";
-    const url = `${DEV_BASE_URL}/api/ws/picture/edit?pictureId=${this.pictureId}`
+    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
+    // 开发环境后端端口是 8124；生产环境默认走当前域名
+    const host = import.meta.env.DEV ? 'localhost:8124' : window.location.host
+    const url = `${protocol}://${host}/api/ws/picture/edit?pictureId=${this.pictureId}`
     this.socket = new WebSocket(url)
 
     // 设置携带 cookie
@@ -65,12 +65,14 @@ export default class PictureEditWebSocket {
    * 发送消息到后端
    * @param {Object} message 消息对象
    */
-  sendMessage(message: object) {
+  sendMessage(message: object): boolean {
     if (this.socket && this.socket.readyState === WebSocket.OPEN) {
       this.socket.send(JSON.stringify(message))
       console.log('消息已发送:', message)
+      return true
     } else {
       console.error('WebSocket 未连接，无法发送消息:', message)
+      return false
     }
   }
 
