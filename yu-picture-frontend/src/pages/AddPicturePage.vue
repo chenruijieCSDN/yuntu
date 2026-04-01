@@ -10,7 +10,13 @@
     <a-tabs v-model:activeKey="uploadType">
       <a-tab-pane key="file" tab="文件上传">
         <!-- 图片上传组件 -->
-        <PictureUpload :picture="picture" :spaceId="spaceId" :onSuccess="onSuccess" />
+        <PictureUpload
+          :picture="picture"
+          :spaceId="spaceId"
+          :autoUpload="false"
+          :onSelectFile="onSelectFile"
+          :onSuccess="onSuccess"
+        />
       </a-tab-pane>
       <a-tab-pane key="url" tab="URL 上传" force-render>
         <!-- URL 图片上传组件 -->
@@ -42,7 +48,7 @@
     </div>
     <!-- 图片信息表单 -->
     <a-form
-      v-if="picture"
+      v-if="picture || selectedFile"
       name="pictureForm"
       layout="vertical"
       :model="pictureForm"
@@ -77,7 +83,15 @@
         />
       </a-form-item>
       <a-form-item>
-        <a-button type="primary" html-type="submit" style="width: 100%">创建</a-button>
+        <a-button
+          type="primary"
+          html-type="submit"
+          style="width: 100%"
+          :loading="submitting"
+          :disabled="submitting"
+        >
+          创建
+        </a-button>
       </a-form-item>
     </a-form>
   </div>
@@ -91,6 +105,7 @@ import {
   editPictureUsingPost,
   getPictureVoByIdUsingGet,
   listPictureTagCategoryUsingGet,
+  uploadPictureUsingPost,
 } from '@/api/pictureController.ts'
 import { useRoute, useRouter } from 'vue-router'
 import UrlPictureUpload from '@/components/UrlPictureUpload.vue'
@@ -103,7 +118,9 @@ const router = useRouter()
 const route = useRoute()
 
 const picture = ref<API.PictureVO>()
+const selectedFile = ref<File>()
 const pictureForm = reactive<API.PictureEditRequest>({})
+const submitting = ref(false)
 const uploadType = ref<'file' | 'url'>('file')
 // 空间 id
 const spaceId = computed(() => {
@@ -117,6 +134,21 @@ const spaceId = computed(() => {
 const onSuccess = (newPicture: API.PictureVO) => {
   picture.value = newPicture
   pictureForm.name = newPicture.name
+  message.success('图片已上传，请完善信息后点击创建')
+}
+
+// 文件上传模式：选择文件仅预览，不立即上传
+const onSelectFile = (file: File) => {
+  selectedFile.value = file
+  picture.value = {
+    ...picture.value,
+    name: file.name,
+    url: URL.createObjectURL(file),
+  } as API.PictureVO
+  if (!pictureForm.name) {
+    pictureForm.name = file.name
+  }
+  message.success('图片已选择，点击创建后开始上传')
 }
 
 /**
@@ -124,25 +156,53 @@ const onSuccess = (newPicture: API.PictureVO) => {
  * @param values
  */
 const handleSubmit = async (values: any) => {
-  console.log(values)
-  const pictureId = picture.value.id
-  if (!pictureId) {
+  if (submitting.value) {
     return
   }
-  const res = await editPictureUsingPost({
-    id: pictureId,
-    spaceId: spaceId.value,
-    ...values,
-  })
-  // 操作成功
-  if (res.data.code === 0 && res.data.data) {
-    message.success('创建成功')
-    // 跳转到图片详情页
-    router.push({
-      path: `/picture/${pictureId}`,
+  submitting.value = true
+  console.log(values)
+  try {
+    let pictureId = picture.value?.id
+    if (uploadType.value === 'file' && !pictureId) {
+      if (!selectedFile.value) {
+        message.error('请先选择图片文件')
+        return
+      }
+      const uploadRes: any = await uploadPictureUsingPost(
+        {
+          spaceId: spaceId.value as any,
+        },
+        {},
+        selectedFile.value,
+      )
+      if (uploadRes.data.code !== 0 || !uploadRes.data.data) {
+        message.error('创建失败，' + uploadRes.data.message)
+        return
+      }
+      picture.value = uploadRes.data.data
+      pictureId = uploadRes.data.data.id
+    }
+    if (!pictureId) {
+      message.error('请先上传图片')
+      return
+    }
+    const res = await editPictureUsingPost({
+      id: pictureId,
+      spaceId: spaceId.value,
+      ...values,
     })
-  } else {
-    message.error('创建失败，' + res.data.message)
+    // 操作成功
+    if (res.data.code === 0 && res.data.data) {
+      message.success('创建成功，公开图库图片需审核后展示')
+      // 跳转到图片详情页
+      router.push({
+        path: `/picture/${pictureId}`,
+      })
+    } else {
+      message.error('创建失败，' + res.data.message)
+    }
+  } finally {
+    submitting.value = false
   }
 }
 

@@ -18,17 +18,20 @@
 <script lang="ts" setup>
 import { ref } from 'vue'
 import { LoadingOutlined, PlusOutlined } from '@ant-design/icons-vue'
-import type { UploadProps } from 'ant-design-vue'
 import { message } from 'ant-design-vue'
 import { uploadPictureUsingPost } from '@/api/pictureController.ts'
 
 interface Props {
   picture?: API.PictureVO
   spaceId?: number
+  autoUpload?: boolean
+  onSelectFile?: (file: File) => void
   onSuccess?: (newPicture: API.PictureVO) => void
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  autoUpload: true,
+})
 
 /**
  * 上传图片
@@ -39,7 +42,7 @@ const handleUpload = async ({ file }: any) => {
   try {
     const params: API.PictureUploadRequest = props.picture ? { id: props.picture.id } : {}
     params.spaceId = props.spaceId;
-    const res = await uploadPictureUsingPost(params, {}, file)
+    const res: any = await uploadPictureUsingPost(params, {}, file)
     if (res.data.code === 0 && res.data.data) {
       message.success('图片上传成功')
       // 将上传成功的图片信息传递给父组件
@@ -47,7 +50,7 @@ const handleUpload = async ({ file }: any) => {
     } else {
       message.error('图片上传失败，' + res.data.message)
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('图片上传失败', error)
     message.error('图片上传失败，' + error.message)
   }
@@ -60,18 +63,27 @@ const loading = ref<boolean>(false)
  * 上传前的校验
  * @param file
  */
-const beforeUpload = (file: UploadProps['fileList'][number]) => {
+const beforeUpload = (file: any) => {
   // 校验图片格式
   const isJpgOrPng = file.type === 'image/jpeg' || file.type === 'image/png'
   if (!isJpgOrPng) {
     message.error('不支持上传该格式的图片，推荐 jpg 或 png')
   }
   // 校验图片大小
-  const isLt2M = file.size / 1024 / 1024 < 2
-  if (!isLt2M) {
-    message.error('不能上传超过 2M 的图片')
+  const isLt10M = file.size / 1024 / 1024 < 10
+  if (!isLt10M) {
+    message.error('不能上传超过 10M 的图片')
   }
-  return isJpgOrPng && isLt2M
+  const valid = isJpgOrPng && isLt10M
+  if (!valid) {
+    return false
+  }
+  // 手动上传模式：只选择文件，不立即上传
+  if (!props.autoUpload) {
+    props.onSelectFile?.(file as File)
+    return false
+  }
+  return true
 }
 </script>
 <style scoped>

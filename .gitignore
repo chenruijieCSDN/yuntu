@@ -34,6 +34,18 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Local secrets & private notes（勿提交） ###
+.env
+.env.*
+!.env.example
+**/application-local.yml
+**/application-prod.yml
+*部署复盘*.md
+*.pem
+*.p12
+secrets/
+
 ### Java template
 # Compiled class file
 *.class

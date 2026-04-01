@@ -7,7 +7,7 @@
         <a-button
           v-if="canUploadPicture"
           type="primary"
-          :href="`/add_picture?spaceId=${id}`"
+          :href="`/#/add_picture?spaceId=${id}`"
           target="_blank"
         >
           + 创建图片
@@ -17,7 +17,7 @@
           type="primary"
           ghost
           :icon="h(TeamOutlined)"
-          :href="`/spaceUserManage/${id}`"
+          :href="`/#/spaceUserManage/${id}`"
           target="_blank"
         >
           成员管理
@@ -27,7 +27,7 @@
           type="primary"
           ghost
           :icon="h(BarChartOutlined)"
-          :href="`/space_analyze?spaceId=${id}`"
+          :href="`/#/space_analyze?spaceId=${id}`"
           target="_blank"
         >
           空间分析

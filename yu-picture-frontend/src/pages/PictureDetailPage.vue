@@ -99,6 +99,7 @@ import { useRouter } from 'vue-router'
 import { downloadImage, formatSize, toHexColor } from '@/utils'
 import ShareModal from '@/components/ShareModal.vue'
 import { SPACE_PERMISSION_ENUM } from '@/constants/space.ts'
+import { useLoginUserStore } from '@/stores/useLoginUserStore.ts'
 
 interface Props {
   id: string | number
@@ -106,11 +107,18 @@ interface Props {
 
 const props = defineProps<Props>()
 const picture = ref<API.PictureVO>({})
+const loginUserStore = useLoginUserStore()
 
 // 通用权限检查函数
 function createPermissionChecker(permission: string) {
   return computed(() => {
-    return (picture.value.permissionList ?? []).includes(permission)
+    const hasSpacePermission = (picture.value.permissionList ?? []).includes(permission)
+    const loginUser = loginUserStore.loginUser
+    const canOperatePublicPicture =
+      picture.value.spaceId == null &&
+      !!loginUser?.id &&
+      (loginUser.userRole === 'admin' || picture.value.userId === loginUser.id)
+    return hasSpacePermission || canOperatePublicPicture
   })
 }
 
@@ -160,8 +168,9 @@ const doDelete = async () => {
   const res = await deletePictureUsingPost({ id })
   if (res.data.code === 0) {
     message.success('删除成功')
+    router.push('/')
   } else {
-    message.error('删除失败')
+    message.error('删除失败，' + res.data.message)
   }
 }
 

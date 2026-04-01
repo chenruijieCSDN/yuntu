@@ -1,6 +1,5 @@
 /**
  * 图片审核状态
- * @author 程序员鱼皮 <a href="https://www.codefather.cn">编程导航原创项目</a>
  */
 export const PIC_REVIEW_STATUS_ENUM = {
   REVIEWING: 0,
@@ -20,12 +19,14 @@ export const PIC_REVIEW_STATUS_MAP = {
 /**
  * 图片审核下拉表单选项
  */
-export const PIC_REVIEW_STATUS_OPTIONS = Object.keys(PIC_REVIEW_STATUS_MAP).map((key) => {
-  return {
-    label: PIC_REVIEW_STATUS_MAP[key],
-    value: key,
-  }
-})
+export const PIC_REVIEW_STATUS_OPTIONS = Object.entries(PIC_REVIEW_STATUS_MAP).map(
+  ([key, label]) => {
+    return {
+      label,
+      value: Number(key),
+    }
+  },
+)
 
 /**
  * 图片编辑消息类型枚举

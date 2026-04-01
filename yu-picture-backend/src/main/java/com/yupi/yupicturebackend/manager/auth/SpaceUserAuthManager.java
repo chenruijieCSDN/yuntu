@@ -80,7 +80,13 @@ public class SpaceUserAuthManager {
             if (userService.isAdmin(loginUser)) {
                 return ADMIN_PERMISSIONS;
             }
-            return Collections.singletonList(SpaceUserPermissionConstant.PICTURE_VIEW);
+            // 公共图库下，登录用户可查看、上传、编辑、删除；具体到单张图片的归属由业务层二次校验兜底
+            List<String> publicPermissions = new ArrayList<>();
+            publicPermissions.add(SpaceUserPermissionConstant.PICTURE_VIEW);
+            publicPermissions.add(SpaceUserPermissionConstant.PICTURE_UPLOAD);
+            publicPermissions.add(SpaceUserPermissionConstant.PICTURE_EDIT);
+            publicPermissions.add(SpaceUserPermissionConstant.PICTURE_DELETE);
+            return publicPermissions;
         }
         SpaceTypeEnum spaceTypeEnum = SpaceTypeEnum.getEnumByValue(space.getSpaceType());
         if (spaceTypeEnum == null) {

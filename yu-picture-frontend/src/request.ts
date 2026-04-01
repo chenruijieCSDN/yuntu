@@ -1,15 +1,17 @@
-import axios from "axios";
-import {message} from "ant-design-vue";
+import axios from 'axios'
+import { message } from 'ant-design-vue'
 
 // 区分开发和生产环境
-const DEV_BASE_URL = "http://localhost:8123";
-// const PROD_BASE_URL = "http://81.69.229.63";
+const DEV_BASE_URL = 'http://localhost:8124'
+const PROD_BASE_URL = ''
+const BASE_URL = import.meta.env.MODE === 'development' ? DEV_BASE_URL : PROD_BASE_URL
+
 // 创建 Axios 实例
 const myAxios = axios.create({
-    baseURL: DEV_BASE_URL,
-    timeout: 10000,
-    withCredentials: true,
-});
+  baseURL: BASE_URL,
+  timeout: 10000,
+  withCredentials: true,
+})
 
 // 全局请求拦截器
 myAxios.interceptors.request.use(
@@ -30,12 +32,14 @@ myAxios.interceptors.response.use(
     // 未登录
     if (data.code === 40100) {
       // 不是获取用户信息的请求，并且用户目前不是已经在用户登录页面，则跳转到登录页面
+      const inLoginPage = window.location.hash.includes('/user/login')
       if (
         !response.request.responseURL.includes('user/get/login') &&
-        !window.location.pathname.includes('/user/login')
+        !inLoginPage
       ) {
         message.warning('请先登录')
-        window.location.href = `/user/login?redirect=${window.location.href}`
+        const redirect = encodeURIComponent(window.location.href)
+        window.location.href = `/#/user/login?redirect=${redirect}`
       }
     }
     return response
@@ -47,4 +51,4 @@ myAxios.interceptors.response.use(
   },
 )
 
-export default myAxios;
+export default myAxios

@@ -5,7 +5,7 @@
         <router-link to="/">
           <div class="title-bar">
             <img class="logo" src="../assets/logo.png" alt="logo" />
-            <div class="title">鱼皮云图库</div>
+            <div class="title">智能协同云图库</div>
           </div>
         </router-link>
       </a-col>
@@ -43,7 +43,9 @@
             </a-dropdown>
           </div>
           <div v-else>
-            <a-button type="primary" href="/user/login">登录</a-button>
+            <router-link to="/user/login">
+              <a-button type="primary">登录</a-button>
+            </router-link>
           </div>
         </div>
       </a-col>
@@ -53,7 +55,8 @@
 <script lang="ts" setup>
 import { computed, h, ref } from 'vue'
 import { HomeOutlined, LogoutOutlined, UserOutlined } from '@ant-design/icons-vue'
-import { MenuProps, message } from 'ant-design-vue'
+import { message } from 'ant-design-vue'
+import type { MenuProps } from 'ant-design-vue'
 import { useRouter } from 'vue-router'
 import { useLoginUserStore } from '@/stores/useLoginUserStore.ts'
 import { userLogoutUsingPost } from '@/api/userController.ts'
@@ -88,18 +91,13 @@ const originItems = [
     label: '空间管理',
     title: '空间管理',
   },
-  {
-    key: 'others',
-    label: h('a', { href: 'https://www.codefather.cn', target: '_blank' }, '编程导航'),
-    title: '编程导航',
-  },
 ]
 
 // 根据权限过滤菜单项
 const filterMenus = (menus = [] as MenuProps['items']) => {
   return menus?.filter((menu) => {
     // 管理员才能看到 /admin 开头的菜单
-    if (menu?.key?.startsWith('/admin')) {
+    if (typeof menu?.key === 'string' && menu.key.startsWith('/admin')) {
       const loginUser = loginUserStore.loginUser
       if (!loginUser || loginUser.userRole !== 'admin') {
         return false
@@ -121,7 +119,7 @@ router.afterEach((to, from, next) => {
 })
 
 // 路由跳转事件
-const doMenuClick = ({ key }) => {
+const doMenuClick = ({ key }: { key: string }) => {
   router.push({
     path: key,
   })
