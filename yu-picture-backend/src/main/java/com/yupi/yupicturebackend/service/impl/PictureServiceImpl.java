@@ -54,7 +54,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * @author 程序员鱼皮 <a href="https://www.codefather.cn">编程导航原创项目</a>
+ * @author chenruijie
  * @description 针对表【picture(图片)】的数据库操作Service实现
  * @createDate 2024-12-11 20:45:51
  */
@@ -416,7 +416,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
                 continue;
             }
             // 处理图片的地址，防止转义或者和对象存储冲突的问题
-            // codefather.cn?yupi=dog，应该只保留 codefather.cn
+            // example.com?foo=bar，应该只保留 example.com
             int questionMarkIndex = fileUrl.indexOf("?");
             if (questionMarkIndex > -1) {
                 fileUrl = fileUrl.substring(0, questionMarkIndex);
