@@ -2,7 +2,7 @@
 
 基于 Vue 3 + Spring Boot 的图片素材管理与协同项目：支持空间、权限、上传至对象存储、AI 能力等。
 
-**在线仓库：** [github.com/chenruijieCSDN/yuntu](https://github.com/chenruijieCSDN/yuntu)
+**线上地址：** [https://yuntu.crj-ai.top](https://yuntu.crj-ai.top) · **在线仓库：** [github.com/chenruijieCSDN/yuntu](https://github.com/chenruijieCSDN/yuntu)
 
 ## 项目结构
 
